@@ -6,23 +6,12 @@ import {
 	message
 } from 'antd';
 import './index.scss';
-import url from '../../assets/api/url';
-import api from '../../assets/api/api';
 
 const Login = () => {
 	const history = useHistory();
-	const onFinish = async (values) => {
-		const { data, code, msg } = await api.post(url.login, {
-			password: values.password,
-			userName: values.username
-		});
-		if (code === 0) {
-			message.success('登录成功!');
-			window.localStorage.setItem('token', data.token);
-			history.push('/main/user-voice-analysis');
-			return;
-		}
-		message.warning(msg);
+	const onFinish = async () => {
+		message.success('登录成功!');
+		history.push('/main/study-module');
 	};
 	return (
 		<div className="login">

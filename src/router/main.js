@@ -3,24 +3,24 @@ import { lazy } from 'react';
 const mainRouter = [
 	{
 		id: 1,
-		name: '总体分析',
-		icon: 'BarChartOutlined',
-		children: [
-			{
-				id: 1,
-				name: '用户之声分析',
-				path: '/main/user-voice-analysis',
-				icon: 'UsergroupDeleteOutlined',
-				component: lazy(() => import('../pages/user-voice-analysis'))
-			}
-		]
+		path: '/main/study-module',
+		name: '学习模块',
+		icon: 'DatabaseOutlined',
+		component: lazy(() => import('../pages/study-module'))
 	},
 	{
 		id: 2,
-		path: '/main/reception-data-manage',
-		name: '接待数据管理',
-		icon: 'DatabaseOutlined',
-		component: lazy(() => import('../pages/reception-data-manage'))
+		name: '问题列表',
+		path: '/main/question-list',
+		icon: 'BarChartOutlined',
+		component: lazy(() => import('../pages/question-list'))
+	},
+	{
+		id: 3,
+		name: '广告列表',
+		path: '/main/ad-list',
+		icon: 'CodeOutlined',
+		component: lazy(() => import('../pages/ad-list'))
 	}
 ];
 
