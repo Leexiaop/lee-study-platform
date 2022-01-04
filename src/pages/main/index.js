@@ -14,7 +14,7 @@ import {
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import * as Icon from '@ant-design/icons';
-// import { userState } from '../../recoil/selector';
+import { userState } from '../../recoil/selector';
 import mainRouter from '../../router/main';
 import './index.scss';
 
@@ -22,7 +22,7 @@ const { Header, Sider, Content } = Layout;
 const { SubMenu } = Menu;
 
 const Main = () => {
-	// const userInfo = useRecoilValue(userState);
+	const userInfo = useRecoilValue(userState);
 	const history = useHistory();
 	const onClick = () => {
 		window.localStorage.removeItem('token');
@@ -39,7 +39,7 @@ const Main = () => {
 				<img className="logo" src={require('../../assets/images/logo.png').default} alt="" />
 				<Dropdown overlay={menu}>
 					<a className="ant-dropdown-link" onClick={(e) => { e.preventDefault(); }}>
-						{/* {userInfo.userName} */}
+						{userInfo.username}
 						<DownOutlined />
 					</a>
 				</Dropdown>

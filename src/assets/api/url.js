@@ -2,12 +2,13 @@
 let url = window.location.href;
 switch (process.env.NODE_ENV) {
 	case 'development':
-		// url = 'http://localweb.baidu.com/api';
-		url = 'http://180.76.186.226/api/';
+		url = 'http://127.0.0.1:5000';
 		break;
 	default:
 		url = `${window.location.origin}/api/`;
 }
+
 export default {
 	// 登录及用户信息相关
+	login: `${url}/login`
 };

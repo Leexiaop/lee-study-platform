@@ -5,12 +5,24 @@ import {
 	Button,
 	message
 } from 'antd';
+import { useSetRecoilState } from 'recoil';
+import { userInfoState } from '../../recoil/atom';
+import api from '../../assets/api/api';
+import url from '../../assets/api/url';
 import './index.scss';
 
 const Login = () => {
 	const history = useHistory();
-	const onFinish = async () => {
-		message.success('登录成功!');
+	const setUserInfoState = useSetRecoilState(userInfoState);
+	const onFinish = async (value) => {
+		const { data, code, msg } = await api.post(url.login, {
+			username: value.username,
+			password: value.password
+		});
+		message.success(msg);
+		if (code) return;
+		window.localStorage.setItem('token', data.token);
+		setUserInfoState(data);
 		history.push('/main/study-module');
 	};
 	return (
