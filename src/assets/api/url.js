@@ -10,5 +10,6 @@ switch (process.env.NODE_ENV) {
 
 export default {
 	// 登录及用户信息相关
-	login: `${url}/login`
+	login: `${url}/login`,
+	studyModule: `${url}/studyModule`
 };
