@@ -76,7 +76,7 @@ const StudyModule = () => {
 			<Table bordered dataSource={dataList}>
 				<Column title="序号" dataIndex="key" key="key" align="center" />
 				<Column title="名称" dataIndex="name" key="name" align="center" />
-				<Column title="模块图" dataIndex="src" key="src" align="center" />
+				<Column title="模块图" dataIndex="src" key="src" align="center" render={(_, record) => <Image width={100} src={record.src} />} />
 				<Column title="模块寄语" dataIndex="tip" key="tip" align="center" />
 				<Column
 					title="操作"
