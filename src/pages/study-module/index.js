@@ -50,6 +50,7 @@ const StudyModule = () => {
 		if (Array.isArray(e)) {
 			return e;
 		}
+		console.log(e, 333);
 		return e?.file?.response?.data || '';
 	};
 	const handleSubmit = async (value) => {

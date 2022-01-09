@@ -8,7 +8,7 @@ axios.interceptors.request.use((config) => {
 });
 
 axios.interceptors.response.use((response) => {
-	if (response.data.code === 201) {
+	if (response.data.code === 10001) {
 		message.warning(response.data.msg, 5);
 		window.localStorage.clear();
 		window.location.href = '/';
