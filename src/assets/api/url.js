@@ -11,5 +11,6 @@ switch (process.env.NODE_ENV) {
 export default {
 	// 登录及用户信息相关
 	login: `${url}/login`,
+	upload: `${url}/upload`,
 	studyModule: `${url}/studyModule`
 };

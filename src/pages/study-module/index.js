@@ -10,7 +10,7 @@ import {
 	Input,
 	Upload
 } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
+import { UploadOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import api from '../../assets/api/api';
 import url from '../../assets/api/url';
 import './index.scss';
@@ -18,9 +18,11 @@ import './index.scss';
 const { Column } = Table;
 
 const StudyModule = () => {
+	const [form] = Form.useForm();
 	const [dataList, setDataList] = useState([]);
 	const [isShow, setShow] = useState(false);
-	const [form, setForm] = useState({});
+	const [param, setParam] = useState({});
+	const [fileList, setFileList] = useState([]);
 	const initData = async () => {
 		const { data } = await api.get(url.studyModule);
 		setDataList(data.map((item, key) => {
@@ -33,14 +35,25 @@ const StudyModule = () => {
 			};
 		}));
 	};
+	useEffect(() => {
+		form.resetFields();
+	}, [isShow]);
 	useEffect(async () => {
 		initData();
 	}, []);
 	const onAddClick = (value) => {
 		setShow(true);
 		if (value.id) {
-			setForm({ ...form, ...value });
+			setParam({ ...param, ...value });
+			setFileList([
+				{
+					url: value.src
+				}
+			]);
+			return;
 		}
+		setParam({});
+		setFileList([]);
 	};
 	const onDelectClick = async (value) => {
 		await api.delete(`${url.studyModule}/${value.id}`);
@@ -50,31 +63,30 @@ const StudyModule = () => {
 		if (Array.isArray(e)) {
 			return e;
 		}
-		console.log(e, 333);
-		return e?.file?.response?.data || '';
+		return e?.file?.response || '';
 	};
 	const handleSubmit = async (value) => {
-		if (form.id) {
-			value.id = form.id;
+		if (param.id) {
+			value.id = param.id;
 		}
-		await api[form.id ? 'put' : 'post'](url.studyModule, value);
-		setForm({});
+		await api[param.id ? 'put' : 'post'](url.studyModule, value);
+		setParam({});
 		setShow(false);
 		initData();
 	};
 	const handleCancel = () => {
 		setShow(false);
-		setForm({});
+		setParam({});
 	};
 	return (
 		<>
-			<Form layout="inline">
+			<Form layout="inline" form={form}>
 				<Form.Item>
 					<Button type="primary" htmlType="button" onClick={onAddClick}>添加</Button>
 				</Form.Item>
 			</Form>
 			<Divider />
-			<Table bordered dataSource={dataList}>
+			<Table bordered dataSource={dataList} pagination={false}>
 				<Column title="序号" dataIndex="key" key="key" align="center" />
 				<Column title="名称" dataIndex="name" key="name" align="center" />
 				<Column title="模块图" dataIndex="src" key="src" align="center" render={(_, record) => <Image width={100} src={record.src} />} />
@@ -93,14 +105,18 @@ const StudyModule = () => {
 				/>
 			</Table>
 			<Modal
-				title={form.id ? '编辑' : '添加'}
+				title={param.id ? '编辑' : '添加'}
 				footer={null}
+				getContainer={false}
+				destroyOnClose
 				visible={isShow}
 				onCancel={handleCancel}
 			>
 				<Form
+					form={form}
+					preserve={false}
 					layout="horizontal"
-					initialValues={form}
+					initialValues={param}
 					onFinish={handleSubmit}
 				>
 					<Form.Item
@@ -124,14 +140,24 @@ const StudyModule = () => {
 								message: '请上传模块样图!'
 							}
 						]}
-						valuePropName="fileLists"
+						valuePropName="src"
 						getValueFromEvent={normFile}
 					>
 						<Upload
-							action="http://127.0.0.1:5000/upload"
+							defaultFileList={fileList}
+							onRemove={() => {
+								setParam({ ...param, ...{ src: '' } });
+							}}
+							customRequest={async (options) => {
+								const { onSuccess, file } = options;
+								const { data } = await api.upload(url.upload, file);
+								onSuccess(data);
+							}}
 							listType="picture"
 						>
-							<Button icon={<UploadOutlined />}>上传</Button>
+							{
+								param.src ? null : <Button icon={<UploadOutlined />}>上传</Button>
+							}
 						</Upload>
 					</Form.Item>
 					<Form.Item
