@@ -10,7 +10,7 @@ import {
 	Input,
 	Upload
 } from 'antd';
-import { UploadOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { UploadOutlined } from '@ant-design/icons';
 import api from '../../assets/api/api';
 import url from '../../assets/api/url';
 import './index.scss';
@@ -111,6 +111,7 @@ const StudyModule = () => {
 				destroyOnClose
 				visible={isShow}
 				onCancel={handleCancel}
+				maskClosable={false}
 			>
 				<Form
 					form={form}
