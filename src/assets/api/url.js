@@ -12,5 +12,7 @@ export default {
 	// 登录及用户信息相关
 	login: `${url}/login`,
 	upload: `${url}/upload`,
-	studyModule: `${url}/studyModule`
+	studyModule: `${url}/studyModule`,
+	question: `${url}/question`,
+	answer: `${url}/answer`
 };

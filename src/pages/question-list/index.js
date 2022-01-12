@@ -10,13 +10,14 @@ import {
 	Input,
 	Row,
 	Col,
-	Drawer
+	Drawer,
+	Card
 } from 'antd';
 import MarkdownEditor from '@uiw/react-markdown-editor';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import api from '../../assets/api/api';
 import url from '../../assets/api/url';
 import './index.scss';
@@ -24,69 +25,80 @@ import './index.scss';
 const { Option } = Select;
 const { Column } = Table;
 
-const dataSource = [
-	{
-		key: 1,
-		question: 'React的虚拟dom是什么？',
-		answerList: [
-			{
-				id: 1,
-				answer: '大家即将放假啊姐姐'
-			},
-			{
-				id: 2,
-				answer: '大家即将放假啊姐姐'
-			}
-		]
-	}
-];
-
 const markdown = "## Install\n\n```bash\nnpm i @uiw/react-markdown-editor\n```\n\n## Document\n\nOfficial document [demo preview](https://uiwjs.github.io/react-markdown-editor/) ([🇨🇳中国镜像网站](http://uiw.gitee.io/react-markdown-editor/))\n\n## Basic Usage\n\n```jsx\nimport MarkdownEditor from '@uiw/react-markdown-editor';\nimport React from 'react';\nimport ReactDOM from 'react-dom';\n\nconst Dome = () => (\n  <MarkdownEditor\n    value={this.state.markdown}\n    onChange={this.updateMarkdown}\n  />\n);\n\nReactDOM.render(<Dome />, document.getElementById('app'));\n```";
-
-const formItemLayout = {
-	labelCol: {
-		xs: { span: 24 },
-		sm: { span: 4 }
-	},
-	wrapperCol: {
-		xs: { span: 24 },
-		sm: { span: 20 }
-	}
-};
-const formItemLayoutWithOutLabel = {
-	wrapperCol: {
-		xs: { span: 24, offset: 0 },
-		sm: { span: 20, offset: 4 }
-	}
-};
 
 const QuestionList = () => {
 	const [form] = Form.useForm();
 	const [query, setQuery] = useState({});
 	const [moduleList, setModuleList] = useState([]);
+	const [answerList, setAnswerList] = useState([]);
+	const [dataList, setDataList] = useState([]);
 	const [param, setParam] = useState({});
+	const [questionId, setQuestionId] = useState(0);
 	const [isShow, setShow] = useState(false);
-	const [isDrawerShow, setDrawerShow] = useState(true);
+	const [isDrawerShow, setDrawerShow] = useState(false);
+	const [isHas, setHas] = useState(false);
+	useEffect(() => {
+		form.resetFields();
+	}, [isShow]);
 	useEffect(async () => {
 		const { data } = await api.get(url.studyModule);
 		setModuleList(data);
 	}, []);
-	const onAddClick = () => {
+	const initData = async () => {
+		const { data } = await api.get(url.question);
+		setDataList(data.map((item, index) => {
+			return {
+				key: index + 1,
+				id: item.id,
+				question: item.question,
+				moduleName: moduleList.find((module) => module.id === item.module)?.name,
+				module: item.module
+			};
+		}));
+	};
+	useEffect(async () => {
+		initData();
+	}, [moduleList]);
+	const onAddClick = (question) => {
 		setShow(true);
+		if (question.id) {
+			setParam({ ...param, ...question });
+			return;
+		}
+		setParam({});
 	};
 	const onOperateClick = () => {};
+	const onQuestionOperate = (question) => {
+		setQuestionId(question.id);
+		setHas(question.answerList && question.answerList.length);
+		setDrawerShow(true);
+	};
 	const handleCancel = () => {
 		setShow(false);
 		setParam({});
 	};
-	const updateMarkdown = (editor, data, value) => {
-		console.log(editor, data, value);
+	const handleSubmit = async (value) => {
+		if (param.id) {
+			value.id = param.id;
+		}
+		await api[param.id ? 'put' : 'post'](url.question, value);
+		setParam({});
+		initData();
+		setShow(false);
+	};
+	const updateMarkDown = (_, $, value, index) => {
+		answerList[index] = value;
+		setAnswerList([...answerList]);
+	};
+	const onMarddownSubmit = async () => {
+		await api.post(url.answer, { questionId, answerList });
 	};
 	return (
 		<>
 			<Form layout="inline" form={form}>
 				<Form.Item>
-					<Button type="primary" htmlType="button">添加</Button>
+					<Button type="primary" htmlType="button" onClick={onAddClick}>添加</Button>
 				</Form.Item>
 				<Form.Item>
 					<Select style={{ width: 200 }} placeholder="请选择模块">
@@ -105,10 +117,11 @@ const QuestionList = () => {
 				</Form.Item>
 			</Form>
 			<Divider />
-			<Table bordered dataSource={dataSource}>
+			<Table bordered pagination={false} dataSource={dataList}>
 				<Column title="序号" dataIndex="key" key="key" align="center" />
+				<Column title="所属模块" dataIndex="moduleName" key="moduleName" align="center" />
 				<Column title="问题" dataIndex="question" key="question" align="center" />
-				<Column
+				{/* <Column
 					title="答案"
 					align="center"
 					ellipsis
@@ -122,7 +135,7 @@ const QuestionList = () => {
 							);
 						})
 					)}
-				/>
+				/> */}
 				<Column
 					title="操作"
 					key="action"
@@ -134,14 +147,25 @@ const QuestionList = () => {
 								type="primary"
 								size="small"
 							>
-								编辑
+								编辑问题
 							</Button>
+							{/* {
+								record.answerList && record.answerList.length ? (
+									<Button
+										onClick={() => onQuestionOperate(record)}
+										type="default"
+										size="small"
+									>
+										查看答案
+									</Button>
+								) : null
+							} */}
 							<Button
-								onClick={() => onOperateClick(record)}
+								onClick={() => onQuestionOperate(record)}
 								type="default"
 								size="small"
 							>
-								查看答案
+								{ record.answerList && record.answerList.length ? '编辑答案' : '添加答案' }
 							</Button>
 							<Button
 								onClick={() => onOperateClick(record)}
@@ -162,9 +186,21 @@ const QuestionList = () => {
 				visible={isShow}
 				onCancel={handleCancel}
 				maskClosable={false}
+				footer={false}
 			>
-				<Form form={form} layout="horizontal" labelCol={{ span: 4 }} style={{ maxHeight: 600, overflowY: 'auto' }}>
-					<Form.Item label="学习模块：">
+				<Form
+					form={form}
+					preserve={false}
+					onFinish={handleSubmit}
+					layout="horizontal"
+					initialValues={param}
+					labelCol={{ span: 4 }}
+					style={{
+						maxHeight: 600,
+						overflowY: 'auto'
+					}}
+				>
+					<Form.Item label="学习模块：" name="module" rules={[{ required: true, message: '请选择学习模块!' }]}>
 						<Select style={{ width: '100%' }} placeholder="请选择模块">
 							{
 								moduleList.map((module) => {
@@ -173,81 +209,97 @@ const QuestionList = () => {
 							}
 						</Select>
 					</Form.Item>
-					<Form.Item label="问题：">
+					<Form.Item label="问题：" name="question" rules={[{ required: true, message: '请填写问题!' }]}>
 						<Input placeholder="请写下您的问题" />
 					</Form.Item>
-					<Form.List name="answerList">
-						{(fields, { add, remove }, { errors }) => (
-							<>
-								{fields.map((field, index) => (
-									<Form.Item
-										{...(index === 0 ? formItemLayout : formItemLayoutWithOutLabel)}
-										label={index === 0 ? '答案' : ''}
-										required={false}
-										key={field.key}
-									>
-										<Row wrap={false}>
-											<Col flex="auto">
-												<MarkdownEditor
-													height="300px"
-													value="this is markdown editor"
-													onChange={updateMarkdown}
-												/>
-											</Col>
-											<Col flex="none">
-												<MinusCircleOutlined
-													width="90%"
-													className="dynamic-delete-button"
-													onClick={() => remove(field.name)}
-												/>
-											</Col>
-										</Row>
-									</Form.Item>
-								))}
-								<Form.Item>
-									<Button
-										type="dashed"
-										onClick={() => add()}
-										style={{ width: '100%' }}
-										icon={<PlusOutlined />}
-									>
-										添加答案
-									</Button>
-									<Form.ErrorList errors={errors} />
-								</Form.Item>
-							</>
-						)}
-					</Form.List>
+					<Form.Item wrapperCol={{
+						offset: 8,
+						span: 16
+					}}
+					>
+						<Space>
+							<Button type="primary" htmlType="submit">确定</Button>
+							<Button type="default" htmlType="button" onClick={handleCancel}>取消</Button>
+						</Space>
+					</Form.Item>
 				</Form>
 			</Modal>
 			<Drawer
-				title="查看答案"
+				title={isHas ? '查看答案' : '添加答案'}
 				width={800}
+				placement={isHas ? 'right' : 'left'}
 				visible={isDrawerShow}
+				onClose={() => setDrawerShow(false)}
 			>
-				<ReactMarkdown
-					children={markdown}
-					components={{
-						code({
-							node, inline, className, children, ...props
-						}) {
-							const match = /language-(\w+)/.exec(className || '');
-							return !inline && match ? (
-								<SyntaxHighlighter
-									children={String(children).replace(/\n$/, '')}
-									style={dark}
-									language={match[1]}
-									PreTag="div"
-									{...props}
-								/>
-							) : (
-								<code className={className} {...props}>
-									{children}
-								</code>
-							);
-						}
-					}}
-				/>
+				{
+					isHas ? (
+						<ReactMarkdown
+							children={markdown}
+							components={{
+								code({
+									node, inline, className, children, ...props
+								}) {
+									const match = /language-(\w+)/.exec(className || '');
+									return !inline && match ? (
+										<SyntaxHighlighter
+											children={String(children).replace(/\n$/, '')}
+											style={dark}
+											language={match[1]}
+											PreTag="div"
+											{...props}
+										/>
+									) : (
+										<code className={className} {...props}>
+											{children}
+										</code>
+									);
+								}
+							}}
+						/>
+					) : (
+						<Space direction="vertical" style={{ width: '100%' }}>
+							<Space>
+								<Button
+									type="dashed"
+									icon={<PlusOutlined />}
+									onClick={() => setAnswerList([...answerList, ''])}
+								>
+									添加答案
+								</Button>
+								<Button type="primary" onClick={onMarddownSubmit}>
+									提交
+								</Button>
+							</Space>
+							{
+								answerList.map((answer, index) => {
+									return (
+										<Card
+											title={`答案${index + 1}:`}
+											style={{ width: '100%' }}
+											key={answer}
+											extra={(
+												<CloseCircleOutlined onClick={
+													() => {
+														answerList.splice(index, 1);
+														setAnswerList([...answerList]);
+													}
+												}
+												/>
+											)}
+										>
+											<MarkdownEditor
+												style={{ width: '100%' }}
+												height="300px"
+												value={answer}
+												onChange={(_, $, value) => updateMarkDown(_, $, value, index)}
+											/>
+										</Card>
+									);
+								})
+							}
+						</Space>
+					)
+				}
 			</Drawer>
 		</>
 	);
