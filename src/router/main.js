@@ -12,11 +12,18 @@ const mainRouter = [
 		id: 2,
 		name: '问题列表',
 		path: '/main/question-list',
-		icon: 'BarChartOutlined',
+		icon: 'InsertRowRightOutlined',
 		component: lazy(() => import('../pages/question-list'))
 	},
 	{
 		id: 3,
+		name: '答案列表',
+		path: '/main/answer-list',
+		icon: 'InsertRowLeftOutlined',
+		component: lazy(() => import('../pages/answer-list'))
+	},
+	{
+		id: 4,
 		name: '广告列表',
 		path: '/main/ad-list',
 		icon: 'CodeOutlined',

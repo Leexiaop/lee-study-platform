@@ -8,10 +8,9 @@ import {
 	Space,
 	Modal,
 	Input,
-	Row,
-	Col,
 	Drawer,
-	Card
+	Card,
+	message
 } from 'antd';
 import MarkdownEditor from '@uiw/react-markdown-editor';
 import ReactMarkdown from 'react-markdown';
@@ -32,6 +31,7 @@ const QuestionList = () => {
 	const [query, setQuery] = useState({});
 	const [moduleList, setModuleList] = useState([]);
 	const [answerList, setAnswerList] = useState([]);
+	const [checkAnswerList, setCheckAnswerList] = useState([]);
 	const [dataList, setDataList] = useState([]);
 	const [param, setParam] = useState({});
 	const [questionId, setQuestionId] = useState(0);
@@ -53,7 +53,8 @@ const QuestionList = () => {
 				id: item.id,
 				question: item.question,
 				moduleName: moduleList.find((module) => module.id === item.module)?.name,
-				module: item.module
+				module: item.module,
+				answerList: item.answerList
 			};
 		}));
 	};
@@ -70,8 +71,9 @@ const QuestionList = () => {
 	};
 	const onOperateClick = () => {};
 	const onQuestionOperate = (question) => {
+		setAnswerList([...answerList, ...question.answerList]);
 		setQuestionId(question.id);
-		setHas(question.answerList && question.answerList.length);
+		setHas(false);
 		setDrawerShow(true);
 	};
 	const handleCancel = () => {
@@ -93,6 +95,21 @@ const QuestionList = () => {
 	};
 	const onMarddownSubmit = async () => {
 		await api.post(url.answer, { questionId, answerList });
+	};
+	const onAnswerCheck = (record) => {
+		if (!record.answerList || !record.answerList.length) {
+			message.warning('请先添加答案');
+			return false;
+		}
+		setCheckAnswerList([...checkAnswerList, ...record.answerList]);
+		setHas(true);
+		setDrawerShow(true);
+		return true;
+	};
+	const onDrawerClose = () => {
+		setDrawerShow(false);
+		setCheckAnswerList([]);
+		setAnswerList([]);
 	};
 	return (
 		<>
@@ -121,21 +138,11 @@ const QuestionList = () => {
 				<Column title="序号" dataIndex="key" key="key" align="center" />
 				<Column title="所属模块" dataIndex="moduleName" key="moduleName" align="center" />
 				<Column title="问题" dataIndex="question" key="question" align="center" />
-				{/* <Column
-					title="答案"
+				<Column
+					title="答案数量"
 					align="center"
-					ellipsis
-					render={(_, record) => (
-						record.answerList.map((r, index) => {
-							return (
-								<span key={r.id}>
-									{r.answer}
-									{index <= record.answerList.length - 1 ? '；' : ''}
-								</span>
-							);
-						})
-					)}
-				/> */}
+					render={(record) => (<a onClick={() => onAnswerCheck(record)}>{record?.answerList?.length}</a>)}
+				/>
 				<Column
 					title="操作"
 					key="action"
@@ -149,21 +156,11 @@ const QuestionList = () => {
 							>
 								编辑问题
 							</Button>
-							{/* {
-								record.answerList && record.answerList.length ? (
-									<Button
-										onClick={() => onQuestionOperate(record)}
-										type="default"
-										size="small"
-									>
-										查看答案
-									</Button>
-								) : null
-							} */}
 							<Button
 								onClick={() => onQuestionOperate(record)}
-								type="default"
+								type="primary"
 								size="small"
+								ghost
 							>
 								{ record.answerList && record.answerList.length ? '编辑答案' : '添加答案' }
 							</Button>
@@ -229,33 +226,47 @@ const QuestionList = () => {
 				width={800}
 				placement={isHas ? 'right' : 'left'}
 				visible={isDrawerShow}
-				onClose={() => setDrawerShow(false)}
+				onClose={onDrawerClose}
 			>
 				{
 					isHas ? (
-						<ReactMarkdown
-							children={markdown}
-							components={{
-								code({
-									node, inline, className, children, ...props
-								}) {
-									const match = /language-(\w+)/.exec(className || '');
-									return !inline && match ? (
-										<SyntaxHighlighter
-											children={String(children).replace(/\n$/, '')}
-											style={dark}
-											language={match[1]}
-											PreTag="div"
-											{...props}
-										/>
-									) : (
-										<code className={className} {...props}>
-											{children}
-										</code>
+						<Space direction="vertical" style={{ width: '100%' }}>
+							{
+								checkAnswerList.map((answer, index) => {
+									return (
+										<Card
+											title={`答案${index + 1}:`}
+											style={{ width: '100%' }}
+											key={`答案${index + 1}`}
+										>
+											<ReactMarkdown
+												children={answer.answer}
+												components={{
+													code({
+														node, inline, className, children, ...props
+													}) {
+														const match = /language-(\w+)/.exec(className || '');
+														return !inline && match ? (
+															<SyntaxHighlighter
+																children={String(children).replace(/\n$/, '')}
+																style={dark}
+																language={match[1]}
+																PreTag="div"
+																{...props}
+															/>
+														) : (
+															<code className={className} {...props}>
+																{children}
+															</code>
+														);
+													}
+												}}
+											/>
+										</Card>
 									);
-								}
-							}}
-						/>
+								})
+							}
+						</Space>
 					) : (
 						<Space direction="vertical" style={{ width: '100%' }}>
 							<Space>
@@ -276,7 +287,7 @@ const QuestionList = () => {
 										<Card
 											title={`答案${index + 1}:`}
 											style={{ width: '100%' }}
-											key={answer}
+											key={`答案${index + 1}`}
 											extra={(
 												<CloseCircleOutlined onClick={
 													() => {
@@ -290,7 +301,7 @@ const QuestionList = () => {
 											<MarkdownEditor
 												style={{ width: '100%' }}
 												height="300px"
-												value={answer}
+												value={answer?.answer}
 												onChange={(_, $, value) => updateMarkDown(_, $, value, index)}
 											/>
 										</Card>
