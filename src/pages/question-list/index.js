@@ -24,20 +24,15 @@ import './index.scss';
 const { Option } = Select;
 const { Column } = Table;
 
-const markdown = "## Install\n\n```bash\nnpm i @uiw/react-markdown-editor\n```\n\n## Document\n\nOfficial document [demo preview](https://uiwjs.github.io/react-markdown-editor/) ([🇨🇳中国镜像网站](http://uiw.gitee.io/react-markdown-editor/))\n\n## Basic Usage\n\n```jsx\nimport MarkdownEditor from '@uiw/react-markdown-editor';\nimport React from 'react';\nimport ReactDOM from 'react-dom';\n\nconst Dome = () => (\n  <MarkdownEditor\n    value={this.state.markdown}\n    onChange={this.updateMarkdown}\n  />\n);\n\nReactDOM.render(<Dome />, document.getElementById('app'));\n```";
-
 const QuestionList = () => {
 	const [form] = Form.useForm();
 	const [query, setQuery] = useState({});
 	const [moduleList, setModuleList] = useState([]);
 	const [answerList, setAnswerList] = useState([]);
-	const [checkAnswerList, setCheckAnswerList] = useState([]);
 	const [dataList, setDataList] = useState([]);
 	const [param, setParam] = useState({});
-	const [questionId, setQuestionId] = useState(0);
 	const [isShow, setShow] = useState(false);
 	const [isDrawerShow, setDrawerShow] = useState(false);
-	const [isHas, setHas] = useState(false);
 	useEffect(() => {
 		form.resetFields();
 	}, [isShow]);
@@ -54,12 +49,15 @@ const QuestionList = () => {
 				question: item.question,
 				moduleName: moduleList.find((module) => module.id === item.module)?.name,
 				module: item.module,
-				answerList: item.answerList
+				answerList: item.answerList,
+				online: item.online
 			};
 		}));
 	};
 	useEffect(async () => {
-		initData();
+		if (moduleList.length) {
+			initData();
+		}
 	}, [moduleList]);
 	const onAddClick = (question) => {
 		setShow(true);
@@ -69,12 +67,20 @@ const QuestionList = () => {
 		}
 		setParam({});
 	};
-	const onOperateClick = () => {};
-	const onQuestionOperate = (question) => {
-		setAnswerList([...answerList, ...question.answerList]);
-		setQuestionId(question.id);
-		setHas(false);
-		setDrawerShow(true);
+	const onQuestionDelete = (value) => {
+		Modal.confirm({
+			content: '您确定要删除吗？',
+			okText: '是的',
+			cancelText: '等会儿，我再想想！',
+			onOk: async () => {
+				await api.delete(`${url.question}/${value.id}`);
+				initData();
+			}
+		});
+	};
+	const onQuestionOperate = async (question) => {
+		await api.put(url.questionOnline, { id: question.id, online: question.online ? 0 : 1 });
+		initData();
 	};
 	const handleCancel = () => {
 		setShow(false);
@@ -89,26 +95,17 @@ const QuestionList = () => {
 		initData();
 		setShow(false);
 	};
-	const updateMarkDown = (_, $, value, index) => {
-		answerList[index] = value;
-		setAnswerList([...answerList]);
-	};
-	const onMarddownSubmit = async () => {
-		await api.post(url.answer, { questionId, answerList });
-	};
 	const onAnswerCheck = (record) => {
 		if (!record.answerList || !record.answerList.length) {
 			message.warning('请先添加答案');
 			return false;
 		}
-		setCheckAnswerList([...checkAnswerList, ...record.answerList]);
-		setHas(true);
+		setAnswerList([...answerList, ...record.answerList]);
 		setDrawerShow(true);
 		return true;
 	};
 	const onDrawerClose = () => {
 		setDrawerShow(false);
-		setCheckAnswerList([]);
 		setAnswerList([]);
 	};
 	return (
@@ -162,10 +159,10 @@ const QuestionList = () => {
 								size="small"
 								ghost
 							>
-								{ record.answerList && record.answerList.length ? '编辑答案' : '添加答案' }
+								{ record.online ? '下线' : '上线' }
 							</Button>
 							<Button
-								onClick={() => onOperateClick(record)}
+								onClick={() => onQuestionDelete(record)}
 								type="default"
 								danger
 								size="small"
@@ -222,95 +219,48 @@ const QuestionList = () => {
 				</Form>
 			</Modal>
 			<Drawer
-				title={isHas ? '查看答案' : '添加答案'}
+				title="查看答案"
 				width={800}
-				placement={isHas ? 'right' : 'left'}
 				visible={isDrawerShow}
 				onClose={onDrawerClose}
 			>
-				{
-					isHas ? (
-						<Space direction="vertical" style={{ width: '100%' }}>
-							{
-								checkAnswerList.map((answer, index) => {
-									return (
-										<Card
-											title={`答案${index + 1}:`}
-											style={{ width: '100%' }}
-											key={`答案${index + 1}`}
-										>
-											<ReactMarkdown
-												children={answer.answer}
-												components={{
-													code({
-														node, inline, className, children, ...props
-													}) {
-														const match = /language-(\w+)/.exec(className || '');
-														return !inline && match ? (
-															<SyntaxHighlighter
-																children={String(children).replace(/\n$/, '')}
-																style={dark}
-																language={match[1]}
-																PreTag="div"
-																{...props}
-															/>
-														) : (
-															<code className={className} {...props}>
-																{children}
-															</code>
-														);
-													}
-												}}
-											/>
-										</Card>
-									);
-								})
-							}
-						</Space>
-					) : (
-						<Space direction="vertical" style={{ width: '100%' }}>
-							<Space>
-								<Button
-									type="dashed"
-									icon={<PlusOutlined />}
-									onClick={() => setAnswerList([...answerList, ''])}
+				<Space direction="vertical" style={{ width: '100%' }}>
+					{
+						answerList.map((answer, index) => {
+							return (
+								<Card
+									title={`答案${index + 1}:`}
+									style={{ width: '100%' }}
+									key={`答案${index + 1}`}
 								>
-									添加答案
-								</Button>
-								<Button type="primary" onClick={onMarddownSubmit}>
-									提交
-								</Button>
-							</Space>
-							{
-								answerList.map((answer, index) => {
-									return (
-										<Card
-											title={`答案${index + 1}:`}
-											style={{ width: '100%' }}
-											key={`答案${index + 1}`}
-											extra={(
-												<CloseCircleOutlined onClick={
-													() => {
-														answerList.splice(index, 1);
-														setAnswerList([...answerList]);
-													}
-												}
-												/>
-											)}
-										>
-											<MarkdownEditor
-												style={{ width: '100%' }}
-												height="300px"
-												value={answer?.answer}
-												onChange={(_, $, value) => updateMarkDown(_, $, value, index)}
-											/>
-										</Card>
-									);
-								})
-							}
-						</Space>
-					)
-				}
+									<ReactMarkdown
+										children={answer.answer}
+										components={{
+											code({
+												node, inline, className, children, ...props
+											}) {
+												const match = /language-(\w+)/.exec(className || '');
+												return !inline && match ? (
+													<SyntaxHighlighter
+														children={String(children).replace(/\n$/, '')}
+														style={dark}
+														language={match[1]}
+														PreTag="div"
+														{...props}
+													/>
+												) : (
+													<code className={className} {...props}>
+														{children}
+													</code>
+												);
+											}
+										}}
+									/>
+								</Card>
+							);
+						})
+					}
+				</Space>
 			</Drawer>
 		</>
 	);

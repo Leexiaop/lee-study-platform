@@ -14,5 +14,7 @@ export default {
 	upload: `${url}/upload`,
 	studyModule: `${url}/studyModule`,
 	question: `${url}/question`,
-	answer: `${url}/answer`
+	questionOnline: `${url}/question/online`,
+	answer: `${url}/answer`,
+	answerOnline: `${url}/answer/online`
 };

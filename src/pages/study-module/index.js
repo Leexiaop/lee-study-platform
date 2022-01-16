@@ -56,8 +56,15 @@ const StudyModule = () => {
 		setFileList([]);
 	};
 	const onDelectClick = async (value) => {
-		await api.delete(`${url.studyModule}/${value.id}`);
-		initData();
+		Modal.confirm({
+			content: '您确定要删除吗？',
+			okText: '是的',
+			cancelText: '等会儿，我再想想！',
+			onOk: async () => {
+				await api.delete(`${url.studyModule}/${value.id}`);
+				initData();
+			}
+		});
 	};
 	const normFile = (e) => {
 		if (Array.isArray(e)) {
