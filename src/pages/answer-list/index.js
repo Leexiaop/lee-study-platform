@@ -19,17 +19,31 @@ const { Column } = Table;
 
 const AnswerList = () => {
 	const [form] = Form.useForm();
-	const [query, setQuery] = useState({});
+	const [current, setCurrent] = useState(1);
+	const [size, setSize] = useState(10);
+	const [total, setTotal] = useState(0);
 	const [moduleList, setModuleList] = useState([]);
+	const [moduleId, setModuleId] = useState('');
 	const [questionList, setQuestionList] = useState([]);
+	const [questionId, setQuestionId] = useState('');
 	const [dataList, setDataList] = useState([]);
 	const [isDrawerShow, setDrawerShow] = useState(false);
 	const [answer, setAnswer] = useState({});
 	const [answerId, setAnswerId] = useState('');
 
 	const initData = async () => {
-		const { data } = await api.get(url.answer);
-		setDataList(data.map((item, index) => {
+		const param = {
+			current,
+			size
+		};
+		if (moduleId) {
+			param.moduleId = moduleId;
+		}
+		if (questionId) {
+			param.questionId = questionId;
+		}
+		const { data } = await api.get(url.answer, param);
+		setDataList(data?.list?.map((item, index) => {
 			return {
 				key: index + 1,
 				id: item.id,
@@ -41,21 +55,34 @@ const AnswerList = () => {
 				online: item.online
 			};
 		}));
+		setTotal(data.total);
 	};
 	useEffect(() => {
 		form.resetFields();
 	}, [isDrawerShow]);
 	useEffect(async () => {
-		const module = await api.get(url.studyModule);
-		setModuleList(module.data);
-		const question = await api.get(url.question);
-		setQuestionList(question.data);
+		const { data } = await api.get(url.studyModule);
+		setModuleList(data);
+		setModuleId(data[0].id);
 	}, []);
+	useEffect(async () => {
+		if (moduleId) {
+			const { data } = await api.get(url.question, { moduleId });
+			setQuestionList(data?.list);
+			setQuestionId(data?.list[0].id);
+		}
+	}, [moduleId]);
 	useEffect(() => {
-		if (questionList.length) {
+		if (questionId) {
 			initData();
 		}
-	}, [questionList]);
+	}, [questionId, current, size]);
+	const onModuleChange = (value) => {
+		setModuleId(value);
+	};
+	const onQuestionChange = (value) => {
+		setQuestionId(value);
+	};
 	const onMarkdownSubmit = async (value) => {
 		await api[answerId ? 'put' : 'post'](url.answer, answerId ? { answer: answer.answer, id: answerId } : { ...value, answer: answer.answer });
 		setDrawerShow(false);
@@ -94,29 +121,45 @@ const AnswerList = () => {
 	const onMarkdownChange = (_, $, value) => {
 		setAnswer({ ...answer, answer: value });
 	};
+	const onReset = () => {
+		setModuleId(moduleList[0]?.id);
+		setQuestionId(questionList[0]?.id);
+		setQuestionList([]);
+		initData();
+	};
 	return (
 		<>
 			<Space>
 				<Button type="primary" htmlType="button" onClick={onAddClick}>添加</Button>
-				<Select style={{ width: 200 }} placeholder="请选择模块">
+				<Select style={{ width: 200 }} value={moduleId} placeholder="请选择模块" onChange={onModuleChange}>
 					{
 						moduleList.map((module) => {
 							return <Option value={module.id} key={module.id}>{module.name}</Option>;
 						})
 					}
 				</Select>
-				<Select style={{ width: 200 }} placeholder="请选择答案">
+				<Select style={{ width: 200 }} value={questionId} placeholder="请选择答案" onChange={onQuestionChange}>
 					{
 						questionList.map((question) => {
 							return <Option value={question.id} key={question.id}>{question.question}</Option>;
 						})
 					}
 				</Select>
-				<Button type="primary" htmlType="submit">搜索</Button>
-				<Button type="default" htmlType="button">重置</Button>
+				<Button type="default" onClick={onReset}>重置</Button>
 			</Space>
 			<Divider />
-			<Table bordered dataSource={dataList}>
+			<Table
+				bordered
+				dataSource={dataList}
+				pagination={{
+					total,
+					pageSize: size,
+					showSizeChanger: true,
+					showTotal: () => `共计${total}条`,
+					onShowSizeChange: (_, pageSize) => setSize(pageSize),
+					onChange: (cur) => setCurrent(cur)
+				}}
+			>
 				<Column title="序号" dataIndex="key" align="center" />
 				<Column title="模块" dataIndex="moduleName" align="center" />
 				<Column title="问题" dataIndex="questionName" align="center" />

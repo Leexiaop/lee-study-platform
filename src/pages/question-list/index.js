@@ -12,11 +12,9 @@ import {
 	Card,
 	message
 } from 'antd';
-import MarkdownEditor from '@uiw/react-markdown-editor';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { PlusOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import api from '../../assets/api/api';
 import url from '../../assets/api/url';
 import './index.scss';
@@ -27,6 +25,9 @@ const { Column } = Table;
 const QuestionList = () => {
 	const [form] = Form.useForm();
 	const [query, setQuery] = useState({});
+	const [total, setTotal] = useState(0);
+	const [current, setCurrent] = useState(1);
+	const [size, setSize] = useState(10);
 	const [moduleList, setModuleList] = useState([]);
 	const [answerList, setAnswerList] = useState([]);
 	const [dataList, setDataList] = useState([]);
@@ -41,8 +42,8 @@ const QuestionList = () => {
 		setModuleList(data);
 	}, []);
 	const initData = async () => {
-		const { data } = await api.get(url.question);
-		setDataList(data.map((item, index) => {
+		const { data } = await api.get(url.question, { ...query, current, size });
+		setDataList(data?.list?.map((item, index) => {
 			return {
 				key: index + 1,
 				id: item.id,
@@ -53,12 +54,13 @@ const QuestionList = () => {
 				online: item.online
 			};
 		}));
+		setTotal(data.total);
 	};
 	useEffect(async () => {
 		if (moduleList.length) {
 			initData();
 		}
-	}, [moduleList]);
+	}, [moduleList, query, current, size]);
 	const onAddClick = (question) => {
 		setShow(true);
 		if (question.id) {
@@ -108,13 +110,19 @@ const QuestionList = () => {
 		setDrawerShow(false);
 		setAnswerList([]);
 	};
+	const onSearch = (value) => {
+		setQuery({ ...query, ...value });
+	};
+	const onReset = () => {
+		setQuery({});
+	};
 	return (
 		<>
-			<Form layout="inline" form={form}>
+			<Form layout="inline" form={form} initialValues={query} onFinish={onSearch}>
 				<Form.Item>
 					<Button type="primary" htmlType="button" onClick={onAddClick}>添加</Button>
 				</Form.Item>
-				<Form.Item>
+				<Form.Item name="moduleId">
 					<Select style={{ width: 200 }} placeholder="请选择模块">
 						{
 							moduleList.map((module) => {
@@ -124,14 +132,25 @@ const QuestionList = () => {
 					</Select>
 				</Form.Item>
 				<Form.Item>
-					<Button type="primary" htmlType="button">搜索</Button>
+					<Button type="primary" htmlType="submit">搜索</Button>
 				</Form.Item>
 				<Form.Item>
-					<Button type="default" htmlType="button">重置</Button>
+					<Button type="default" htmlType="reset" onClick={onReset}>重置</Button>
 				</Form.Item>
 			</Form>
 			<Divider />
-			<Table bordered pagination={false} dataSource={dataList}>
+			<Table
+				bordered
+				pagination={{
+					total,
+					pageSize: size,
+					showSizeChanger: true,
+					showTotal: () => `共计${total}条`,
+					onShowSizeChange: (_, pageSize) => setSize(pageSize),
+					onChange: (cur) => setCurrent(cur)
+				}}
+				dataSource={dataList}
+			>
 				<Column title="序号" dataIndex="key" key="key" align="center" />
 				<Column title="所属模块" dataIndex="moduleName" key="moduleName" align="center" />
 				<Column title="问题" dataIndex="question" key="question" align="center" />
