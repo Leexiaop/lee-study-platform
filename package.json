@@ -2,6 +2,7 @@
   "name": "lee-study-platform",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://127.0.0.1:5000",
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
     "@babel/core": "7.12.3",
