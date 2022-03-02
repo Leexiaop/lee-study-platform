@@ -17,14 +17,14 @@ import './index.scss';
 
 const { Column } = Table;
 
-const StudyModule = () => {
+const Modules = () => {
 	const [form] = Form.useForm();
 	const [dataList, setDataList] = useState([]);
 	const [isShow, setShow] = useState(false);
 	const [param, setParam] = useState({});
 	const [fileList, setFileList] = useState([]);
 	const initData = async () => {
-		const { data } = await api.get(url.studyModule);
+		const { data } = await api.get(url.modules);
 		setDataList(data.map((item, key) => {
 			return {
 				key: key + 1,
@@ -61,7 +61,7 @@ const StudyModule = () => {
 			okText: '是的',
 			cancelText: '等会儿，我再想想！',
 			onOk: async () => {
-				await api.delete(`${url.studyModule}/${value.id}`);
+				await api.delete(`${url.modules}/${value.id}`);
 				initData();
 			}
 		});
@@ -76,7 +76,7 @@ const StudyModule = () => {
 		if (param.id) {
 			value.id = param.id;
 		}
-		await api[param.id ? 'put' : 'post'](url.studyModule, value);
+		await api[param.id ? 'put' : 'post'](url.modules, value);
 		setParam({});
 		setShow(false);
 		initData();
@@ -186,4 +186,4 @@ const StudyModule = () => {
 	);
 };
 
-export default StudyModule;
+export default Modules;

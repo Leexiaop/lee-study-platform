@@ -1,6 +1,6 @@
 import './index.scss';
 
-const StudyModule = () => {
+const Ad = () => {
 	return (
 		<>
 			广告列表
@@ -8,4 +8,4 @@ const StudyModule = () => {
 	);
 };
 
-export default StudyModule;
+export default Ad;

@@ -11,7 +11,7 @@ axios.interceptors.response.use((response) => {
 	if (response.data.code === 10001) {
 		message.warning(response.data.msg, 5);
 		window.localStorage.clear();
-		window.location.href = '/';
+		// window.location.href = '/';
 		return false;
 	}
 	return response;

@@ -23,7 +23,7 @@ const Login = () => {
 		if (code) return;
 		window.localStorage.setItem('token', data.token);
 		setUserInfoState(data);
-		history.push('/main/study-module');
+		history.push('/main/module');
 	};
 	return (
 		<div className="login">

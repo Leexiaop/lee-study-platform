@@ -61,7 +61,7 @@ const AnswerList = () => {
 		form.resetFields();
 	}, [isDrawerShow]);
 	useEffect(async () => {
-		const { data } = await api.get(url.studyModule);
+		const { data } = await api.get(url.modules);
 		setModuleList(data);
 		setModuleId(data[0].id);
 	}, []);
