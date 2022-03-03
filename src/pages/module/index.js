@@ -23,9 +23,12 @@ const Modules = () => {
 	const [isShow, setShow] = useState(false);
 	const [param, setParam] = useState({});
 	const [fileList, setFileList] = useState([]);
+	const [size, setSize] = useState(10);
+	const [current, setCurrent] = useState(1);
+	const [total, setTotal] = useState(0);
 	const initData = async () => {
-		const { data } = await api.get(url.modules);
-		setDataList(data.map((item, key) => {
+		const { data } = await api.get(url.modules, { current, size });
+		setDataList(data?.list?.map((item, key) => {
 			return {
 				key: key + 1,
 				name: item.name,
@@ -34,13 +37,14 @@ const Modules = () => {
 				tip: item.tip
 			};
 		}));
+		setTotal(data.total);
 	};
 	useEffect(() => {
 		form.resetFields();
 	}, [isShow]);
 	useEffect(async () => {
 		initData();
-	}, []);
+	}, [current, size]);
 	const onAddClick = (value) => {
 		setShow(true);
 		if (value.id) {
@@ -93,7 +97,25 @@ const Modules = () => {
 				</Form.Item>
 			</Form>
 			<Divider />
-			<Table bordered dataSource={dataList} pagination={false}>
+			<Table
+				bordered
+				dataSource={dataList}
+				pagination={{
+					pageSize: size,
+					current,
+					total,
+					showSizeChanger: true,
+					showTotal: () => {
+						return `共计${total}条`;
+					},
+					onChange: (page) => {
+						setCurrent(page);
+					},
+					onShowSizeChange: (_, pageSize) => {
+						setSize(pageSize);
+					}
+				}}
+			>
 				<Column title="序号" dataIndex="key" key="key" align="center" />
 				<Column title="名称" dataIndex="name" key="name" align="center" />
 				<Column title="模块图" dataIndex="src" key="src" align="center" render={(_, record) => <Image width={100} src={record.src} />} />
