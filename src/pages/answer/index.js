@@ -62,8 +62,8 @@ const AnswerList = () => {
 	}, [isDrawerShow]);
 	useEffect(async () => {
 		const { data } = await api.get(url.modules);
-		setModuleList(data);
-		setModuleId(data[0].id);
+		setModuleList(data?.list);
+		setModuleId(data?.list[0].id);
 	}, []);
 	useEffect(async () => {
 		if (moduleId) {

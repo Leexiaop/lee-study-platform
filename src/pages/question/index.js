@@ -38,8 +38,8 @@ const QuestionList = () => {
 		form.resetFields();
 	}, [isShow]);
 	useEffect(async () => {
-		const { data } = await api.get(url.studyModule);
-		setModuleList(data);
+		const { data } = await api.get(url.modules);
+		setModuleList(data?.list);
 	}, []);
 	const initData = async () => {
 		const { data } = await api.get(url.question, { ...query, current, size });
