@@ -2,6 +2,8 @@ import { message } from 'antd';
 import axios from 'axios';
 import _ from 'lodash';
 
+axios.defaults.baseURL = process.env.NODE_ENV === 'development' ? '' : '/api';
+
 axios.interceptors.request.use((config) => {
 	config.headers.token = window.localStorage.getItem('token');
 	return config;
